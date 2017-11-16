@@ -12,15 +12,25 @@ services:
     healthcheck:
       test: exit 0
 
+  frontend:
+    container_name: frontend
+    build: https://github.com/jamieconnelly/kerrini-frontend.git
+    healthcheck:
+      test: exit 0
+
   nginx:
     container_name: nginx
     build: ./nginx/
     restart: always
     ports:
       - 80:80
+    volumes_from:
+      - frontend
     depends_on:
       users-service:
         condition: service_started
+      frontend:
+        condition: service_healthy
     links:
       - users-service
 
@@ -33,6 +43,7 @@ services:
       - APP_SETTINGS=app.config.ProductionConfig
       - DATABASE_URL=postgres://postgres:postgres@users-db:5432/users_prod
       - DATABASE_TEST_URL=postgres://postgres:postgres@users-db:5432/users_test
+      - SECRET_KEY=${SECRET_KEY}
     depends_on:
       users-db:
         condition: service_healthy
